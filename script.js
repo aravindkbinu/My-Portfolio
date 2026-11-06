@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (play) {
         cinemaVideo.play().catch(() => {
           cinemaVideo.muted = true;
-          cinemaVideo.play();
+          cinemaVideo.play().catch(() => {});
         });
       } else {
         cinemaVideo.pause();
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cinemaVideo.paused || cinemaVideo.ended) {
         cinemaVideo.play().catch(() => {
           cinemaVideo.muted = true;
-          cinemaVideo.play();
+          cinemaVideo.play().catch(() => {});
         });
       } else {
         cinemaVideo.pause();
@@ -431,6 +431,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (iconPlay) iconPlay.classList.remove('is-hidden');
       if (iconPause) iconPause.classList.add('is-hidden');
     });
+
+    cinemaVideo.addEventListener('error', () => {
+      console.warn('Cinema video playback error:', cinemaVideo.error, cinemaVideo.src);
+    });
   }
 
   const openVideoCinemaModal = (projectItem) => {
@@ -449,14 +453,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.overflow = 'hidden';
 
     if (cinemaVideo && videoSrc) {
-      cinemaVideo.src = videoSrc;
+      cinemaVideo.src = encodeURI(videoSrc);
+      cinemaVideo.load();
       cinemaVideo.currentTime = 0;
-      cinemaVideo.play().catch(() => {
-        cinemaVideo.muted = true;
-        if (iconSoundOn) iconSoundOn.classList.add('is-hidden');
-        if (iconSoundMuted) iconSoundMuted.classList.remove('is-hidden');
-        cinemaVideo.play();
-      });
+      const playPromise = cinemaVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          cinemaVideo.muted = true;
+          if (iconSoundOn) iconSoundOn.classList.add('is-hidden');
+          if (iconSoundMuted) iconSoundMuted.classList.remove('is-hidden');
+          cinemaVideo.play().catch(() => {});
+        });
+      }
     }
 
     setTimeout(() => {
